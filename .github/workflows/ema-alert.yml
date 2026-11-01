@@ -1,1 +1,60 @@
+name: Binance EMA20 Alert
 
+on:
+  schedule:
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: binance-ema20-alert
+  cancel-in-progress: true
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Create runtime configuration
+        env:
+          QQ_SMTP_USER: ${{ secrets.QQ_SMTP_USER }}
+          QQ_SMTP_AUTH_CODE: ${{ secrets.QQ_SMTP_AUTH_CODE }}
+          ALERT_RECIPIENTS: ${{ secrets.ALERT_RECIPIENTS }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          required = ["QQ_SMTP_USER", "QQ_SMTP_AUTH_CODE", "ALERT_RECIPIENTS"]
+          missing = [name for name in required if not os.environ.get(name, "").strip()]
+          if missing:
+              raise SystemExit(f"Missing GitHub Secrets: {', '.join(missing)}")
+
+          path = Path("config.example.json")
+          config = json.loads(path.read_text(encoding="utf-8"))
+          config["email"]["sender"] = os.environ["QQ_SMTP_USER"].strip()
+          config["email"]["auth_code"] = os.environ["QQ_SMTP_AUTH_CODE"].strip()
+          config["email"]["recipients"] = [
+              value.strip()
+              for value in os.environ["ALERT_RECIPIENTS"].split(",")
+              if value.strip()
+          ]
+          Path("config.json").write_text(
+              json.dumps(config, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Check latest closed candles
+        run: python monitor.py --once --stateless
