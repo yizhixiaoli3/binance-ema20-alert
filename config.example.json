@@ -1,0 +1,22 @@
+{
+  "symbols": [
+    "BTCUSDT",
+    "ETHUSDT",
+    "DOGEUSDT",
+    "BNBUSDT"
+  ],
+  "interval": "15m",
+  "ema_period": 20,
+  "confirmation_candles": 3,
+  "poll_seconds": 20,
+  "history_limit": 250,
+  "email": {
+    "smtp_host": "smtp.qq.com",
+    "smtp_port": 465,
+    "sender": "你的QQ邮箱@qq.com",
+    "auth_code": "你的QQ邮箱SMTP授权码",
+    "recipients": [
+      "接收提醒的邮箱"
+    ]
+  }
+}
